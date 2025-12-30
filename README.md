@@ -22,6 +22,33 @@ Next.js 15 と Rust で構築する Todo アプリケーション
 
 ### 起動方法
 
+#### Makefile を使う場合（推奨）
+
+```bash
+# 全サービスを起動
+make up
+
+# バックグラウンドで起動
+make up-d
+
+# ログを確認
+make logs
+
+# 停止
+make down
+
+# イメージをビルド
+make build
+
+# コンテナとボリュームを削除
+make clean
+
+# ヘルプを表示
+make help
+```
+
+#### Docker Compose コマンドを直接使う場合
+
 ```bash
 # 全サービスを起動
 docker compose up

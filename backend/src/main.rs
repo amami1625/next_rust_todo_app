@@ -2,21 +2,15 @@ mod config;
 mod db;
 mod handlers;
 mod models;
+mod modules;
 mod routes;
 
 use config::Config;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // ロギングの初期化（ログを見やすく表示）
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "todo_backend=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // ロギングの初期化
+    modules::logging::init();
 
     // .env ファイルから環境変数を読み込み（開発環境用）
     dotenv::dotenv().ok();

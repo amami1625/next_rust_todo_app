@@ -13,8 +13,8 @@ use crate::models::{CreateTodo, Todo, UpdateTodo};
 /// POST /api/todos
 /// Body: {"title": "タイトル", "description": "説明（任意）"}
 pub async fn create_todo(
-    State(pool): State<PgPool>,           // データベース接続プールを取得
-    Json(payload): Json<CreateTodo>,      // リクエストボディを CreateTodo に変換
+    State(pool): State<PgPool>,      // データベース接続プールを取得
+    Json(payload): Json<CreateTodo>, // リクエストボディを CreateTodo に変換
 ) -> Result<(StatusCode, Json<Todo>), (StatusCode, String)> {
     // SQL クエリで新しい Todo を挿入し、作成されたレコードを返す
     let todo = sqlx::query_as::<_, Todo>(
@@ -24,14 +24,17 @@ pub async fn create_todo(
         RETURNING id, title, description, completed, created_at, updated_at
         "#,
     )
-    .bind(&payload.title)           // $1 にタイトルをバインド
-    .bind(&payload.description)     // $2 に説明をバインド
-    .fetch_one(&pool)               // クエリを実行して1件取得
+    .bind(&payload.title) // $1 にタイトルをバインド
+    .bind(&payload.description) // $2 に説明をバインド
+    .fetch_one(&pool) // クエリを実行して1件取得
     .await
     .map_err(|e| {
         // エラーが発生した場合
         tracing::error!("Failed to create todo: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create todo: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to create todo: {}", e),
+        )
     })?;
 
     // 201 Created ステータスコードと作成された Todo を返す
@@ -52,11 +55,14 @@ pub async fn get_todos(
         ORDER BY created_at DESC
         "#,
     )
-    .fetch_all(&pool)               // 全件取得
+    .fetch_all(&pool) // 全件取得
     .await
     .map_err(|e| {
         tracing::error!("Failed to fetch todos: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch todos: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch todos: {}", e),
+        )
     })?;
 
     Ok(Json(todos))
@@ -67,7 +73,7 @@ pub async fn get_todos(
 /// GET /api/todos/:id
 pub async fn get_todo(
     State(pool): State<PgPool>,
-    Path(id): Path<Uuid>,              // URL パスから ID を取得
+    Path(id): Path<Uuid>, // URL パスから ID を取得
 ) -> Result<Json<Todo>, (StatusCode, String)> {
     // 指定された ID の Todo を取得
     let todo = sqlx::query_as::<_, Todo>(
@@ -78,15 +84,21 @@ pub async fn get_todo(
         "#,
     )
     .bind(id)
-    .fetch_optional(&pool)          // 存在しない場合は None を返す
+    .fetch_optional(&pool) // 存在しない場合は None を返す
     .await
     .map_err(|e| {
         tracing::error!("Failed to fetch todo: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch todo: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch todo: {}", e),
+        )
     })?
     .ok_or_else(|| {
         // Todo が見つからない場合は 404 を返す
-        (StatusCode::NOT_FOUND, format!("Todo with id {} not found", id))
+        (
+            StatusCode::NOT_FOUND,
+            format!("Todo with id {} not found", id),
+        )
     })?;
 
     Ok(Json(todo))
@@ -110,9 +122,17 @@ pub async fn update_todo(
     .await
     .map_err(|e| {
         tracing::error!("Failed to fetch todo: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch todo: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch todo: {}", e),
+        )
     })?
-    .ok_or_else(|| (StatusCode::NOT_FOUND, format!("Todo with id {} not found", id)))?;
+    .ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("Todo with id {} not found", id),
+        )
+    })?;
 
     // 更新するフィールドを適用
     if let Some(title) = payload.title {
@@ -143,7 +163,10 @@ pub async fn update_todo(
     .await
     .map_err(|e| {
         tracing::error!("Failed to update todo: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to update todo: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to update todo: {}", e),
+        )
     })?;
 
     Ok(Json(updated_todo))
@@ -163,13 +186,19 @@ pub async fn delete_todo(
         .await
         .map_err(|e| {
             tracing::error!("Failed to delete todo: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to delete todo: {}", e))
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to delete todo: {}", e),
+            )
         })?;
 
     // 削除された行数を確認
     if result.rows_affected() == 0 {
         // 削除対象が見つからなかった
-        return Err((StatusCode::NOT_FOUND, format!("Todo with id {} not found", id)));
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("Todo with id {} not found", id),
+        ));
     }
 
     // 204 No Content（削除成功、レスポンスボディなし）

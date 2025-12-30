@@ -3,9 +3,9 @@ use std::env;
 /// アプリケーション設定
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub database_url: String,  // データベース接続文字列
-    pub host: String,          // サーバーのホスト
-    pub port: u16,             // サーバーのポート
+    pub database_url: String, // データベース接続文字列
+    pub host: String,         // サーバーのホスト
+    pub port: u16,            // サーバーのポート
 }
 
 impl Config {

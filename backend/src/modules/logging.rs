@@ -20,7 +20,7 @@ mod tests {
     fn test_init_does_not_panic() {
         // 初回の初期化
         init();
-        
+
         // 2回目の初期化でもパニックしない
         init();
     }

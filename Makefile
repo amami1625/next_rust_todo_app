@@ -1,4 +1,4 @@
-.PHONY: up down build logs clean test help
+.PHONY: up down build logs clean test fmt clippy help
 
 # Docker Compose を起動
 up:
@@ -24,6 +24,14 @@ clean:
 test:
 	@if [ -d backend ]; then cd backend && cargo test; else cargo test; fi
 
+# コードをフォーマット
+fmt:
+	@if [ -d backend ]; then cd backend && cargo fmt; else cargo fmt; fi
+
+# コードを lint
+clippy:
+	@if [ -d backend ]; then cd backend && cargo clippy -- -D warnings; else cargo clippy -- -D warnings; fi
+
 # ヘルプを表示
 help:
 	@echo "利用可能なコマンド:"
@@ -33,5 +41,7 @@ help:
 	@echo "  make build   - Docker イメージをビルド"
 	@echo "  make logs    - ログを表示"
 	@echo "  make test    - テストを実行"
+	@echo "  make fmt     - コードをフォーマット"
+	@echo "  make clippy  - コードを lint"
 	@echo "  make clean   - コンテナとボリュームを削除"
 	@echo "  make help    - このヘルプを表示"

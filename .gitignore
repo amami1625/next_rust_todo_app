@@ -1,0 +1,36 @@
+# Rust
+backend/target/
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+postgres-data/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Serena
+.serena/

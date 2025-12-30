@@ -1,4 +1,4 @@
-.PHONY: up down build logs clean help
+.PHONY: up down build logs clean test help
 
 # Docker Compose を起動
 up:
@@ -20,6 +20,10 @@ logs:
 clean:
 	docker compose down -v
 
+# テストを実行
+test:
+	@if [ -d backend ]; then cd backend && cargo test; else cargo test; fi
+
 # ヘルプを表示
 help:
 	@echo "利用可能なコマンド:"
@@ -28,5 +32,6 @@ help:
 	@echo "  make down    - Docker Compose を停止"
 	@echo "  make build   - Docker イメージをビルド"
 	@echo "  make logs    - ログを表示"
+	@echo "  make test    - テストを実行"
 	@echo "  make clean   - コンテナとボリュームを削除"
 	@echo "  make help    - このヘルプを表示"

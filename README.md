@@ -24,16 +24,16 @@ Next.js 15 と Rust で構築する Todo アプリケーション
 
 ```bash
 # 全サービスを起動
-docker-compose up
+docker compose up
 
 # バックグラウンドで起動
-docker-compose up -d
+docker compose up -d
 
 # ログを確認
-docker-compose logs -f
+docker compose logs -f
 
 # 停止
-docker-compose down
+docker compose down
 ```
 
 ### アクセス

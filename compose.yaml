@@ -34,23 +34,5 @@ services:
       postgres:
         condition: service_healthy
 
-  # Next.js フロントエンド
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: todo-frontend
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
-
 volumes:
   postgres-data:

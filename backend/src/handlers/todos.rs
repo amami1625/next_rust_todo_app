@@ -118,6 +118,7 @@ pub async fn update_todo(
     if let Some(title) = payload.title {
         todo.title = title;
     }
+    // description の処理: None = 更新しない, Some(None) = null に設定, Some(Some(v)) = 値を設定
     if let Some(description) = payload.description {
         todo.description = description;
     }

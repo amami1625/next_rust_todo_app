@@ -24,7 +24,10 @@ pub struct CreateTodo {
 // Todo を更新するときに受け取るデータ
 #[derive(Debug, Deserialize)]
 pub struct UpdateTodo {
-    pub title: Option<String>,         // タイトルを変更する場合
-    pub description: Option<String>,   // 説明を変更する場合
-    pub completed: Option<bool>,       // 完了状態を変更する場合
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,                     // タイトルを変更する場合
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<Option<String>>,       // 説明を変更/削除する場合
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed: Option<bool>,                   // 完了状態を変更する場合
 }

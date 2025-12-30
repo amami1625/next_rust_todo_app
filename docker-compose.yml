@@ -35,11 +35,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - cargo-cache:/usr/local/cargo/registry
-      - target-cache:/app/target
-    command: cargo watch -x run
 
   # Next.js フロントエンド
   frontend:
@@ -61,5 +56,3 @@ services:
 
 volumes:
   postgres-data:
-  cargo-cache:
-  target-cache:

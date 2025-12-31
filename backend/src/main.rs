@@ -6,11 +6,12 @@ mod modules;
 mod routes;
 
 use config::Config;
+use modules::logging;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // ロギングの初期化
-    modules::logging::init();
+    logging::init();
 
     // .env ファイルから環境変数を読み込み（開発環境用）
     dotenv::dotenv().ok();

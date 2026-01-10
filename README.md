@@ -1,11 +1,11 @@
 # Todo App - Next.js + Rust
 
-Next.js 15 と Rust で構築する Todo アプリケーション
+Next.js 16 と Rust で構築する Todo アプリケーション
 
 ## 技術スタック
 
 ### Frontend
-- Next.js 15 (App Router)
+- Next.js 16 (App Router)
 - TypeScript
 - Tailwind CSS
 

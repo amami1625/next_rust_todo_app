@@ -1,5 +1,11 @@
 use axum::http::{Method, header};
-use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    routing::{get, patch},
+};
+
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tower_http::cors::CorsLayer;
@@ -14,6 +20,11 @@ struct Todo {
 #[derive(Debug, Deserialize)]
 struct CreateTodoRequest {
     title: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateTodoRequest {
+    completed: bool,
 }
 
 #[derive(Clone)]
@@ -70,6 +81,23 @@ async fn create_todo(
     Ok((StatusCode::CREATED, Json(todo)))
 }
 
+async fn update_todo(
+    Path(id): Path<u64>,
+    State(state): State<AppState>,
+    Json(payload): Json<UpdateTodoRequest>,
+) -> Result<Json<Todo>, (StatusCode, String)> {
+    let mut todos_guard = state.todos.lock().unwrap();
+
+    let todo = todos_guard.iter_mut().find(|t| t.id == id);
+    match todo {
+        Some(t) => {
+            t.completed = payload.completed;
+            Ok(Json(t.clone()))
+        }
+        None => Err((StatusCode::NOT_FOUND, format!("todo {id} not found"))),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let cors = CorsLayer::new()
@@ -85,6 +113,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/todos", get(get_todos).post(create_todo))
+        .route("/todos/:id", patch(update_todo))
         .with_state(state)
         .layer(cors);
 
@@ -93,6 +122,12 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+fn apply_completed(todos: &mut [Todo], id: u64, completed: bool) -> Option<Todo> {
+    let t = todos.iter_mut().find(|t| t.id == id)?;
+    t.completed = completed;
+    Some(t.clone())
 }
 
 #[cfg(test)]
@@ -112,5 +147,25 @@ mod tests {
         // 今回は最低限、入力検証の考え方を確認するテストにする
         let title = "   ".trim();
         assert!(title.is_empty());
+    }
+
+    #[test]
+    fn apply_completed_updates_target() {
+        let mut todos = vec![
+            Todo {
+                id: 1,
+                title: "a".to_string(),
+                completed: false,
+            },
+            Todo {
+                id: 2,
+                title: "b".to_string(),
+                completed: false,
+            },
+        ];
+        let updated = apply_completed(&mut todos, 2, true).unwrap();
+        assert_eq!(updated.id, 2);
+        assert_eq!(updated.completed, true);
+        assert_eq!(todos[1].completed, true);
     }
 }

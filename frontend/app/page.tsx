@@ -21,6 +21,26 @@ export default function Home() {
     setTodos(data);
   };
 
+  const toggleCompleted = async (id: number, completed: boolean) => {
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:3001/todos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+
+      await loadTodos();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    }
+  };
+
   useEffect(() => {
     loadTodos().catch((e) =>
       setError(e instanceof Error ? e.message : "Unknown error")
@@ -82,7 +102,11 @@ export default function Home() {
             <label
               style={{ textDecoration: t.completed ? "line-through" : "none" }}
             >
-              <input type="checkbox" checked={t.completed} readOnly /> {t.title}
+              <input
+                type="checkbox"
+                checked={t.completed}
+                onChange={(e) => toggleCompleted(t.id, e.target.checked)}
+              />
             </label>
           </li>
         ))}

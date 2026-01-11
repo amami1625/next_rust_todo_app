@@ -98,6 +98,17 @@ async fn update_todo(
     }
 }
 
+async fn delete_todo(State(state): State<AppState>, Path(id): Path<u64>) -> StatusCode {
+    let mut todos = state.todos.lock().unwrap();
+
+    if let Some(idx) = todos.iter().position(|t| t.id == id) {
+        todos.remove(idx);
+        StatusCode::NO_CONTENT
+    } else {
+        StatusCode::NOT_FOUND
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let cors = CorsLayer::new()
@@ -113,7 +124,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/todos", get(get_todos).post(create_todo))
-        .route("/todos/:id", patch(update_todo))
+        .route("/todos/:id", patch(update_todo).delete(delete_todo))
         .with_state(state)
         .layer(cors);
 

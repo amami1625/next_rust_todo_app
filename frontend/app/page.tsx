@@ -41,6 +41,20 @@ export default function Home() {
     }
   };
 
+  async function deleteTodo(id: number) {
+    const res = await fetch(`http://localhost:3001/todos/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.status === 204) {
+      await loadTodos();
+      return;
+    };
+    if (res.status === 404) throw new Error("Todo not found");
+    throw new Error(`Unexpected: ${res.status}`);
+
+  }
+
   useEffect(() => {
     loadTodos().catch((e) =>
       setError(e instanceof Error ? e.message : "Unknown error")
@@ -108,6 +122,7 @@ export default function Home() {
                 onChange={(e) => toggleCompleted(t.id, e.target.checked)}
               />
             </label>
+            <button onClick={() => deleteTodo(t.id)}>del</button>
           </li>
         ))}
       </ul>

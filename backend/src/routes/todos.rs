@@ -24,7 +24,7 @@ pub async fn create_todo(
 ) -> (StatusCode, Json<Todo>) {
     let mut todos = state.todos.lock().await;
 
-    let id = (todos.len() as u32) + 1;
+    let id = state.allocate_id();
 
     let todo = Todo {
         id,

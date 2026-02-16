@@ -4,6 +4,9 @@ use crate::{routes, state::AppState};
 
 pub fn app(state: AppState) -> Router {
     Router::new()
-        .route("/todos", get(routes::todos::list_todos))
+        .route(
+            "/todos",
+            get(routes::todos::list_todos).post(routes::todos::create_todo),
+        )
         .with_state(state)
 }

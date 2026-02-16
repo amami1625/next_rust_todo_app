@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    models::{CreateTodo, Todo},
+    models::{CreateTodo, Todo, UpdateTodo},
     state::AppState,
 };
 
@@ -50,4 +50,27 @@ pub async fn get_todo(
         .ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(todo))
+}
+
+pub async fn update_todo(
+    State(state): State<AppState>,
+    Path(id): Path<u32>,
+    Json(payload): Json<UpdateTodo>,
+) -> Result<Json<Todo>, StatusCode> {
+    let mut todos = state.todos.lock().await;
+
+    let todo = todos
+        .iter_mut()
+        .find(|t| t.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if let Some(title) = payload.title {
+        todo.title = title;
+    }
+
+    if let Some(done) = payload.done {
+        todo.done = done;
+    }
+
+    Ok(Json(todo.clone()))
 }

@@ -8,5 +8,6 @@ pub fn app(state: AppState) -> Router {
             "/todos",
             get(routes::todos::list_todos).post(routes::todos::create_todo),
         )
+        .route("/todos/{id}", get(routes::todos::get_todo))
         .with_state(state)
 }

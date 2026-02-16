@@ -1,4 +1,8 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 
 use crate::{
     models::{CreateTodo, Todo},
@@ -31,4 +35,19 @@ pub async fn create_todo(
     todos.push(todo.clone());
 
     (StatusCode::CREATED, Json(todo))
+}
+
+pub async fn get_todo(
+    State(state): State<AppState>,
+    Path(id): Path<u32>,
+) -> Result<Json<Todo>, StatusCode> {
+    let todos = state.todos.lock().await;
+
+    let todo = todos
+        .iter()
+        .find(|t| t.id == id)
+        .cloned()
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(todo))
 }

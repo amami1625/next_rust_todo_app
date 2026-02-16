@@ -74,3 +74,19 @@ pub async fn update_todo(
 
     Ok(Json(todo.clone()))
 }
+
+pub async fn delete_todo(
+    State(state): State<AppState>,
+    Path(id): Path<u32>,
+) -> Result<StatusCode, StatusCode> {
+    let mut todos = state.todos.lock().await;
+
+    let before = todos.len();
+    todos.retain(|t| t.id != id);
+
+    if todos.len() == before {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}

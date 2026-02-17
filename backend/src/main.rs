@@ -5,9 +5,9 @@ mod routes;
 mod state;
 mod store;
 
+use sqlx::{self, SqlitePool};
 use state::AppState;
 use std::net::SocketAddr;
-use sqlx::{self, SqlitePool};
 
 #[tokio::main]
 async fn main() {

@@ -12,6 +12,7 @@ pub struct TodoRow {
     pub id: i64,
     pub title: String,
     pub done: i64,
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -19,6 +20,7 @@ pub struct TodoGet {
     pub id: i64,
     pub title: String,
     pub done: bool,
+    pub created_at: String,
 }
 
 impl From<TodoRow> for TodoGet {
@@ -27,6 +29,7 @@ impl From<TodoRow> for TodoGet {
             id: row.id,
             title: row.title,
             done: row.done != 0,
+            created_at: row.created_at,
         }
     }
 }

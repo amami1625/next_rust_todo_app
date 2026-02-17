@@ -8,31 +8,40 @@ pub struct TodoStore;
 
 impl TodoStore {
     pub async fn list(state: &AppState) -> Result<Vec<TodoGet>, AppError> {
-        let rows = sqlx::query_as::<_, TodoRow>("SELECT id, title, done FROM todos ORDER BY id")
-            .fetch_all(&state.pool)
-            .await
-            .map_err(|_| AppError::Internal)?;
+        let rows = sqlx::query_as::<_, TodoRow>(
+            "SELECT id, title, created_at, done FROM todos ORDER BY id",
+        )
+        .fetch_all(&state.pool)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
         Ok(rows.into_iter().map(TodoGet::from).collect())
     }
 
     pub async fn get(state: &AppState, id: i64) -> Result<TodoGet, AppError> {
-        let row = sqlx::query_as::<_, TodoRow>("SELECT id, title, done FROM todos WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&state.pool)
-            .await
-            .map_err(|_| AppError::Internal)?;
+        let row = sqlx::query_as::<_, TodoRow>(
+            "SELECT id, title, done, created_at FROM todos WHERE id = ?",
+        )
+        .bind(id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
         let row = row.ok_or(AppError::NotFound)?;
         Ok(TodoGet::from(row))
     }
 
     pub async fn create(state: &AppState, title: String) -> Result<TodoGet, AppError> {
-        let res = sqlx::query("INSERT INTO todos (title, done) VALUES (?, 0)")
-            .bind(title)
-            .execute(&state.pool)
-            .await
-            .map_err(|_| AppError::Internal)?;
+        let res = sqlx::query(
+            "INSERT INTO todos (title, done, created_at) VALUES (?, 0, datetime('now'))",
+        )
+        .bind(title)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| {
+            eprintln!("[sqlx error][create] {e:?}");
+            AppError::Internal
+        })?;
 
         let id = res.last_insert_rowid();
         Self::get(state, id).await

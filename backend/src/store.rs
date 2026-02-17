@@ -9,7 +9,7 @@ pub struct TodoStore;
 impl TodoStore {
     pub async fn list(state: &AppState) -> Result<Vec<TodoGet>, AppError> {
         let rows = sqlx::query_as::<_, TodoRow>(
-            "SELECT id, title, created_at, done FROM todos ORDER BY id",
+            "SELECT id, title, created_at, updated_at, done FROM todos ORDER BY id",
         )
         .fetch_all(&state.pool)
         .await
@@ -20,7 +20,7 @@ impl TodoStore {
 
     pub async fn get(state: &AppState, id: i64) -> Result<TodoGet, AppError> {
         let row = sqlx::query_as::<_, TodoRow>(
-            "SELECT id, title, done, created_at FROM todos WHERE id = ?",
+            "SELECT id, title, done, created_at, updated_at FROM todos WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(&state.pool)
@@ -33,7 +33,11 @@ impl TodoStore {
 
     pub async fn create(state: &AppState, title: String) -> Result<TodoGet, AppError> {
         let res = sqlx::query(
-            "INSERT INTO todos (title, done, created_at) VALUES (?, 0, datetime('now'))",
+            r#"
+            WITH now(ts) AS (SELECT datetime('now'))
+            INSERT INTO todos (title, done, created_at, updated_at)
+            SELECT ?, 0, ts, ts FROM now
+            "#
         )
         .bind(title)
         .execute(&state.pool)
@@ -56,7 +60,7 @@ impl TodoStore {
         let _ = Self::get(state, id).await?;
 
         if let Some(title) = title {
-            sqlx::query("UPDATE todos SET title = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET title = ?, updated_at = datetime('now') WHERE id = ?")
                 .bind(title)
                 .bind(id)
                 .execute(&state.pool)
@@ -66,7 +70,7 @@ impl TodoStore {
 
         if let Some(done) = done {
             let done_1 = if done { 1 } else { 0 };
-            sqlx::query("UPDATE todos SET done = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET done = ?, updated_at = datetime('now') WHERE id = ?")
                 .bind(done_1)
                 .bind(id)
                 .execute(&state.pool)

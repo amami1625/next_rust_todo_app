@@ -1,7 +1,9 @@
 mod app;
+mod error;
 mod models;
 mod routes;
 mod state;
+mod store;
 
 use state::AppState;
 use std::net::SocketAddr;

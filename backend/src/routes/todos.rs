@@ -5,72 +5,54 @@ use axum::{
 };
 
 use crate::{
+    error::AppError,
     models::{CreateTodo, Todo, UpdateTodo},
     state::AppState,
+    store::TodoStore,
 };
 
 pub async fn list_todos(State(state): State<AppState>) -> Json<Vec<Todo>> {
-    let snapshot = {
-        let todos = state.todos.lock().await;
-        todos.clone()
-    };
-
-    Json(snapshot)
+    let items = TodoStore::list(&state).await;
+    Json(items)
 }
 
 pub async fn create_todo(
     State(state): State<AppState>,
     Json(payload): Json<CreateTodo>,
-) -> (StatusCode, Json<Todo>) {
-    let mut todos = state.todos.lock().await;
+) -> Result<(StatusCode, Json<Todo>), AppError> {
+    let title = payload.title.trim();
+    if title.is_empty() {
+        return Err(AppError::BadRequest("title is empty"));
+    }
 
-    let id = state.allocate_id();
-
-    let todo = Todo {
-        id,
-        title: payload.title,
-        done: false,
-    };
-
-    todos.push(todo.clone());
-
-    (StatusCode::CREATED, Json(todo))
+    let todo = TodoStore::create(&state, title.to_string()).await;
+    Ok((StatusCode::CREATED, Json(todo)))
 }
 
 pub async fn get_todo(
     State(state): State<AppState>,
     Path(id): Path<u32>,
-) -> Result<Json<Todo>, StatusCode> {
-    let todos = state.todos.lock().await;
-
-    let todo = todos
-        .iter()
-        .find(|t| t.id == id)
-        .cloned()
-        .ok_or(StatusCode::NOT_FOUND)?;
-
-    Ok(Json(todo))
+) -> Result<Json<Todo>, AppError> {
+    let todo = TodoStore::get(&state, id).await?;
+    Ok(Json(todo.clone()))
 }
 
 pub async fn update_todo(
     State(state): State<AppState>,
     Path(id): Path<u32>,
     Json(payload): Json<UpdateTodo>,
-) -> Result<Json<Todo>, StatusCode> {
-    let mut todos = state.todos.lock().await;
+) -> Result<Json<Todo>, AppError> {
+    let title = if let Some(t) = payload.title {
+        let t = t.trim();
+        if t.is_empty() {
+            return Err(AppError::BadRequest("title is empty"));
+        }
+        Some(t.to_string())
+    } else {
+        None
+    };
 
-    let todo = todos
-        .iter_mut()
-        .find(|t| t.id == id)
-        .ok_or(StatusCode::NOT_FOUND)?;
-
-    if let Some(title) = payload.title {
-        todo.title = title;
-    }
-
-    if let Some(done) = payload.done {
-        todo.done = done;
-    }
+    let todo = TodoStore::update(&state, id, title, payload.done).await?;
 
     Ok(Json(todo.clone()))
 }
@@ -78,15 +60,8 @@ pub async fn update_todo(
 pub async fn delete_todo(
     State(state): State<AppState>,
     Path(id): Path<u32>,
-) -> Result<StatusCode, StatusCode> {
-    let mut todos = state.todos.lock().await;
-
-    let before = todos.len();
-    todos.retain(|t| t.id != id);
-
-    if todos.len() == before {
-        return Err(StatusCode::NOT_FOUND);
-    }
+) -> Result<StatusCode, AppError> {
+    TodoStore::delete(&state, id).await?;
 
     Ok(StatusCode::NO_CONTENT)
 }

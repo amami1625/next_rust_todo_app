@@ -9,45 +9,52 @@ pub struct TodoStore;
 impl TodoStore {
     pub async fn list(state: &AppState) -> Result<Vec<TodoGet>, AppError> {
         let rows = sqlx::query_as::<_, TodoRow>(
-            "SELECT id, title, created_at, updated_at, done FROM todos ORDER BY id",
+            "SELECT id, title, created_at::text AS created_at, updated_at::text AS updated_at, done FROM todos ORDER BY id",
         )
         .fetch_all(&state.pool)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| {
+            eprintln!("[sqlx error][list] {e:?}");
+            AppError::Internal
+        })?;
 
         Ok(rows.into_iter().map(TodoGet::from).collect())
     }
 
     pub async fn get(state: &AppState, id: i64) -> Result<TodoGet, AppError> {
         let row = sqlx::query_as::<_, TodoRow>(
-            "SELECT id, title, done, created_at, updated_at FROM todos WHERE id = ?",
+            "SELECT id, title, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE id = $1",
         )
         .bind(id)
         .fetch_optional(&state.pool)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| {
+            eprintln!("[sqlx error][get] {e:?}");
+            AppError::Internal
+        })?;
 
         let row = row.ok_or(AppError::NotFound)?;
         Ok(TodoGet::from(row))
     }
 
     pub async fn create(state: &AppState, title: String) -> Result<TodoGet, AppError> {
-        let res = sqlx::query(
+        let row = sqlx::query_scalar::<_, i64>(
             r#"
-            WITH now(ts) AS (SELECT datetime('now'))
+            WITH now(ts) AS (SELECT now())
             INSERT INTO todos (title, done, created_at, updated_at)
-            SELECT ?, 0, ts, ts FROM now
-            "#
+            SELECT $1, false, ts, ts FROM now
+            RETURNING id 
+            "#,
         )
         .bind(title)
-        .execute(&state.pool)
+        .fetch_one(&state.pool)
         .await
         .map_err(|e| {
             eprintln!("[sqlx error][create] {e:?}");
             AppError::Internal
         })?;
 
-        let id = res.last_insert_rowid();
+        let id = row;
         Self::get(state, id).await
     }
 
@@ -60,33 +67,41 @@ impl TodoStore {
         let _ = Self::get(state, id).await?;
 
         if let Some(title) = title {
-            sqlx::query("UPDATE todos SET title = ?, updated_at = datetime('now') WHERE id = ?")
+            sqlx::query("UPDATE todos SET title = $1, updated_at = now() WHERE id = $2")
                 .bind(title)
                 .bind(id)
                 .execute(&state.pool)
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| {
+                    eprintln!("[sqlx error][update] {e:?}");
+                    AppError::Internal
+                })?;
         }
 
         if let Some(done) = done {
-            let done_1 = if done { 1 } else { 0 };
-            sqlx::query("UPDATE todos SET done = ?, updated_at = datetime('now') WHERE id = ?")
-                .bind(done_1)
+            sqlx::query("UPDATE todos SET done = $1, updated_at = now() WHERE id = $2")
+                .bind(done)
                 .bind(id)
                 .execute(&state.pool)
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| {
+                    eprintln!("[sqlx error][update] {e:?}");
+                    AppError::Internal
+                })?;
         }
 
         Self::get(state, id).await
     }
 
     pub async fn delete(state: &AppState, id: i64) -> Result<(), AppError> {
-        let res = sqlx::query("DELETE FROM todos WHERE id = ?")
+        let res = sqlx::query("DELETE FROM todos WHERE id = $1")
             .bind(id)
             .execute(&state.pool)
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| {
+                eprintln!("[sqlx error][delete] {e:?}");
+                AppError::Internal
+            })?;
 
         if res.rows_affected() == 0 {
             return Err(AppError::NotFound);

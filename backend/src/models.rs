@@ -11,7 +11,7 @@ pub struct Todo {
 pub struct TodoRow {
     pub id: i64,
     pub title: String,
-    pub done: i64,
+    pub done: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -30,7 +30,7 @@ impl From<TodoRow> for TodoGet {
         Self {
             id: row.id,
             title: row.title,
-            done: row.done != 0,
+            done: row.done,
             created_at: row.created_at,
             updated_at: row.updated_at,
         }

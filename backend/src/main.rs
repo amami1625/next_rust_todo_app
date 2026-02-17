@@ -5,14 +5,21 @@ mod routes;
 mod state;
 mod store;
 
-use sqlx::{self, SqlitePool};
 use state::AppState;
 use std::net::SocketAddr;
 
 #[tokio::main]
 async fn main() {
-    let pool = SqlitePool::connect("sqlite://db/todos.db").await.unwrap();
+    dotenvy::dotenv().ok();
+    let database_url = std::env::var("DATABASE_URL").unwrap();
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .unwrap();
+
     sqlx::migrate!().run(&pool).await.unwrap();
+
     let state = AppState::new(pool);
     let app = app::app(state);
 

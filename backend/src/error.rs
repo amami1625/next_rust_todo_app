@@ -9,6 +9,7 @@ use serde::Serialize;
 pub enum AppError {
     NotFound,
     BadRequest(&'static str),
+    Internal,
 }
 
 #[derive(Serialize)]
@@ -26,6 +27,12 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => {
                 let body = ErrorBody { error: msg };
                 (StatusCode::BAD_REQUEST, Json(body)).into_response()
+            }
+            AppError::Internal => {
+                let body = ErrorBody {
+                    error: "internal error",
+                };
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(body)).into_response()
             }
         }
     }

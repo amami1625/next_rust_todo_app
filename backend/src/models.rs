@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Todo {
-    pub id: u32,
+    pub id: i64,
     pub title: String,
-    pub done: bool,
+    pub done: i64,
 }
 
 #[derive(Debug, Deserialize)]

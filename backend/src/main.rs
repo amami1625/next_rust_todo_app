@@ -7,10 +7,13 @@ mod store;
 
 use state::AppState;
 use std::net::SocketAddr;
+use sqlx::{self, SqlitePool};
 
 #[tokio::main]
 async fn main() {
-    let state = AppState::new();
+    let pool = SqlitePool::connect("sqlite://db/todos.db").await.unwrap();
+    sqlx::migrate!().run(&pool).await.unwrap();
+    let state = AppState::new(pool);
     let app = app::app(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

@@ -3,64 +3,74 @@ use crate::{error::AppError, models::Todo, state::AppState};
 pub struct TodoStore;
 
 impl TodoStore {
-    pub async fn list(state: &AppState) -> Vec<Todo> {
-        let todos = state.todos.lock().await;
-        todos.clone()
+    pub async fn list(state: &AppState) -> Result<Vec<Todo>, AppError> {
+        let items = sqlx::query_as::<_, Todo>("SELECT id, title, done FROM todos ORDER BY id")
+            .fetch_all(&state.pool)
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        Ok(items)
     }
 
-    pub async fn get(state: &AppState, id: u32) -> Result<Todo, AppError> {
-        let todos = state.todos.lock().await;
-        todos
-            .iter()
-            .find(|t| t.id == id)
-            .cloned()
-            .ok_or(AppError::NotFound)
+    pub async fn get(state: &AppState, id: i64) -> Result<Todo, AppError> {
+        let item = sqlx::query_as::<_, Todo>("SELECT id, title, done FROM todos WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&state.pool)
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        item.ok_or(AppError::NotFound)
     }
 
-    pub async fn create(state: &AppState, title: String) -> Todo {
-        let mut todos = state.todos.lock().await;
-        let id = state.allocate_id();
+    pub async fn create(state: &AppState, title: String) -> Result<Todo, AppError> {
+        let res = sqlx::query("INSERT INTO todos (title, done) VALUES (?, 0)")
+            .bind(title)
+            .execute(&state.pool)
+            .await
+            .map_err(|_| AppError::Internal)?;
 
-        let todo = Todo {
-            id,
-            title,
-            done: false,
-        };
-
-        todos.push(todo.clone());
-        todo
+        let id = res.last_insert_rowid();
+        Self::get(state, id).await
     }
 
     pub async fn update(
         state: &AppState,
-        id: u32,
+        id: i64,
         title: Option<String>,
         done: Option<bool>,
     ) -> Result<Todo, AppError> {
-        let mut todos = state.todos.lock().await;
-
-        let todo = todos
-            .iter_mut()
-            .find(|t| t.id == id)
-            .ok_or(AppError::NotFound)?;
+        let _ = Self::get(state, id).await?;
 
         if let Some(title) = title {
-            todo.title = title;
+            sqlx::query("UPDATE todos SET title = ? WHERE id = ?")
+                .bind(title)
+                .bind(id)
+                .execute(&state.pool)
+                .await
+                .map_err(|_| AppError::Internal)?;
         }
 
         if let Some(done) = done {
-            todo.done = done;
+            let done_1 = if done { 1 } else { 0 };
+            sqlx::query("UPDATE todos SET done = ? WHERE id = ?")
+                .bind(done_1)
+                .bind(id)
+                .execute(&state.pool)
+                .await
+                .map_err(|_| AppError::Internal)?;
         }
 
-        Ok(todo.clone())
+        Self::get(state, id).await
     }
 
-    pub async fn delete(state: &AppState, id: u32) -> Result<(), AppError> {
-        let mut todos = state.todos.lock().await;
-        let before = todos.len();
-        todos.retain(|t| t.id != id);
+    pub async fn delete(state: &AppState, id: i64) -> Result<(), AppError> {
+        let res = sqlx::query("DELETE FROM todos WHERE id = ?")
+            .bind(id)
+            .execute(&state.pool)
+            .await
+            .map_err(|_| AppError::Internal)?;
 
-        if todos.len() == before {
+        if res.rows_affected() == 0 {
             return Err(AppError::NotFound);
         }
 

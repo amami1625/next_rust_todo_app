@@ -1,14 +1,10 @@
-use crate::{
-    error::AppError,
-    models::{TodoGet, TodoRow},
-    state::AppState,
-};
+use crate::{error::AppError, models::Todo, state::AppState};
 
 pub struct TodoStore;
 
 impl TodoStore {
-    pub async fn list(state: &AppState) -> Result<Vec<TodoGet>, AppError> {
-        let rows = sqlx::query_as::<_, TodoRow>(
+    pub async fn list(state: &AppState) -> Result<Vec<Todo>, AppError> {
+        let todos = sqlx::query_as::<_, Todo>(
             "SELECT id, title, created_at::text AS created_at, updated_at::text AS updated_at, done FROM todos ORDER BY id",
         )
         .fetch_all(&state.pool)
@@ -18,11 +14,11 @@ impl TodoStore {
             AppError::Internal
         })?;
 
-        Ok(rows.into_iter().map(TodoGet::from).collect())
+        Ok(todos)
     }
 
-    pub async fn get(state: &AppState, id: i64) -> Result<TodoGet, AppError> {
-        let row = sqlx::query_as::<_, TodoRow>(
+    pub async fn get(state: &AppState, id: i64) -> Result<Todo, AppError> {
+        let todo = sqlx::query_as::<_, Todo>(
             "SELECT id, title, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE id = $1",
         )
         .bind(id)
@@ -33,11 +29,10 @@ impl TodoStore {
             AppError::Internal
         })?;
 
-        let row = row.ok_or(AppError::NotFound)?;
-        Ok(TodoGet::from(row))
+        todo.ok_or(AppError::NotFound)
     }
 
-    pub async fn create(state: &AppState, title: String) -> Result<TodoGet, AppError> {
+    pub async fn create(state: &AppState, title: String) -> Result<Todo, AppError> {
         let row = sqlx::query_scalar::<_, i64>(
             r#"
             WITH now(ts) AS (SELECT now())
@@ -63,7 +58,7 @@ impl TodoStore {
         id: i64,
         title: Option<String>,
         done: Option<bool>,
-    ) -> Result<TodoGet, AppError> {
+    ) -> Result<Todo, AppError> {
         let _ = Self::get(state, id).await?;
 
         if let Some(title) = title {

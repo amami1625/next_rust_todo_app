@@ -6,12 +6,12 @@ use axum::{
 
 use crate::{
     error::AppError,
-    models::{CreateTodo, Todo, TodoGet, UpdateTodo},
+    models::{CreateTodo, Todo, UpdateTodo},
     state::AppState,
     store::TodoStore,
 };
 
-pub async fn list_todos(State(state): State<AppState>) -> Result<Json<Vec<TodoGet>>, AppError> {
+pub async fn list_todos(State(state): State<AppState>) -> Result<Json<Vec<Todo>>, AppError> {
     let items = TodoStore::list(&state).await?;
     Ok(Json(items))
 }
@@ -19,7 +19,7 @@ pub async fn list_todos(State(state): State<AppState>) -> Result<Json<Vec<TodoGe
 pub async fn create_todo(
     State(state): State<AppState>,
     Json(payload): Json<CreateTodo>,
-) -> Result<(StatusCode, Json<TodoGet>), AppError> {
+) -> Result<(StatusCode, Json<Todo>), AppError> {
     let title = payload.title.trim();
     if title.is_empty() {
         return Err(AppError::BadRequest("title is empty"));
@@ -32,7 +32,7 @@ pub async fn create_todo(
 pub async fn get_todo(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> Result<Json<TodoGet>, AppError> {
+) -> Result<Json<Todo>, AppError> {
     let todo = TodoStore::get(&state, id).await?;
     Ok(Json(todo))
 }
@@ -41,7 +41,7 @@ pub async fn update_todo(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateTodo>,
-) -> Result<Json<TodoGet>, AppError> {
+) -> Result<Json<Todo>, AppError> {
     let title = if let Some(t) = payload.title {
         let t = t.trim();
         if t.is_empty() {
@@ -54,7 +54,7 @@ pub async fn update_todo(
 
     let todo = TodoStore::update(&state, id, title, payload.done).await?;
 
-    Ok(Json(todo.clone()))
+    Ok(Json(todo))
 }
 
 pub async fn delete_todo(

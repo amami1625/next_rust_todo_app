@@ -12,13 +12,21 @@ pub struct Todo {
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateTodo {
-    #[validate(length(min = 1, max = 200, message = "タイトルは1文字以上200文字以下で入力してください"))]
+    #[validate(length(
+        min = 1,
+        max = 200,
+        message = "タイトルは1文字以上200文字以下で入力してください"
+    ))]
     pub title: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateTodo {
-    #[validate(length(min = 1, max = 200, message = "タイトルは1文字以上200文字以下で入力してください"))]
+    #[validate(length(
+        min = 1,
+        max = 200,
+        message = "タイトルは1文字以上200文字以下で入力してください"
+    ))]
     pub title: Option<String>,
     pub done: Option<bool>,
 }
@@ -38,4 +46,94 @@ pub struct PaginatedResponse<T: Serialize> {
     pub total: i64,
     pub page: i64,
     pub limit: i64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod create_todo {
+        use super::*;
+
+        #[test]
+        fn 正常なタイトルでバリデーションが通る() {
+            let todo = CreateTodo {
+                title: "買い物に行く".to_string(),
+            };
+            assert!(todo.validate().is_ok());
+        }
+
+        #[test]
+        fn 空のタイトルはバリデーションエラーになる() {
+            let todo = CreateTodo {
+                title: "".to_string(),
+            };
+            assert!(todo.validate().is_err());
+        }
+
+        #[test]
+        fn タイトル200文字はバリデーションが通る() {
+            let todo = CreateTodo {
+                title: "あ".repeat(200),
+            };
+            assert!(todo.validate().is_ok());
+        }
+
+        #[test]
+        fn タイトル201文字はバリデーションエラーになる() {
+            let todo = CreateTodo {
+                title: "あ".repeat(201),
+            };
+            assert!(todo.validate().is_err());
+        }
+    }
+
+    mod update_todo {
+        use super::*;
+
+        #[test]
+        fn タイトルなしの更新はバリデーションが通る() {
+            let todo = UpdateTodo {
+                title: None,
+                done: Some(true),
+            };
+            assert!(todo.validate().is_ok());
+        }
+
+        #[test]
+        fn 正常なタイトルでの更新はバリデーションが通る() {
+            let todo = UpdateTodo {
+                title: Some("新しいタイトル".to_string()),
+                done: None,
+            };
+            assert!(todo.validate().is_ok());
+        }
+
+        #[test]
+        fn タイトル200文字はバリデーションが通る() {
+            let todo = UpdateTodo {
+                title: Some("a".repeat(200)),
+                done: Some(true),
+            };
+            assert!(todo.validate().is_ok());
+        }
+
+        #[test]
+        fn タイトル201文字はバリデーションエラーになる() {
+            let todo = UpdateTodo {
+                title: Some("あ".repeat(201)),
+                done: Some(true),
+            };
+            assert!(todo.validate().is_err());
+        }
+
+        #[test]
+        fn 空のタイトルでの更新はバリデーションエラーになる() {
+            let todo = UpdateTodo {
+                title: Some("".to_string()),
+                done: None,
+            };
+            assert!(todo.validate().is_err());
+        }
+    }
 }

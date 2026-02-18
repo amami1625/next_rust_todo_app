@@ -59,3 +59,66 @@ impl IntoResponse for AppError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use validator::ValidationError;
+
+    mod from_validation_errors {
+        use super::*;
+
+        #[test]
+        fn エラーメッセージが正しく変換される() {
+            let mut errors = ValidationErrors::new();
+            let mut error = ValidationError::new("length");
+            error.message = Some("タイトルは1文字以上200文字以下で入力してください".into());
+            errors.add("title", error);
+
+            let app_error = AppError::from(errors);
+
+            // AppError::Validation でなければ panic してテスト失敗
+            let AppError::Validation(msg) = app_error else {
+                panic!("AppError::Validation が期待されたが、別のバリアントだった");
+            };
+            assert!(msg.contains("title"));
+            assert!(msg.contains("タイトルは1文字以上200文字以下で入力してください"));
+        }
+
+        #[test]
+        fn 複数フィールドのエラーがセミコロンで結合される() {
+            let mut errors = ValidationErrors::new();
+
+            let mut error1 = ValidationError::new("length");
+            error1.message = Some("タイトルエラー".into());
+            errors.add("title", error1);
+
+            let mut error2 = ValidationError::new("length");
+            error2.message = Some("説明エラー".into());
+            errors.add("description", error2);
+
+            let app_error = AppError::from(errors);
+
+            let AppError::Validation(msg) = app_error else {
+                panic!("AppError::Validation が期待された");
+            };
+            assert!(msg.contains("title: タイトルエラー"));
+            assert!(msg.contains("description: 説明エラー"));
+            assert!(msg.contains("; "));
+        }
+
+        #[test]
+        fn メッセージなしのエラーは無視される() {
+            let mut errors = ValidationErrors::new();
+            let error = ValidationError::new("length");
+            errors.add("title", error);
+
+            let app_error = AppError::from(errors);
+
+            let AppError::Validation(msg) = app_error else {
+                panic!("AppError::Validation が期待された");
+            };
+            assert_eq!(msg, "");
+        }
+    }
+}

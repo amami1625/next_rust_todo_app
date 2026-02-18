@@ -3,6 +3,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
+use validator::Validate;
 
 use crate::{
     error::AppError,
@@ -20,11 +21,9 @@ pub async fn create_todo(
     State(state): State<AppState>,
     Json(payload): Json<CreateTodo>,
 ) -> Result<(StatusCode, Json<Todo>), AppError> {
-    let title = payload.title.trim();
-    if title.is_empty() {
-        return Err(AppError::BadRequest("title is empty"));
-    }
+    payload.validate()?;
 
+    let title = payload.title.trim();
     let todo = TodoStore::create(&state, title.to_string()).await?;
     Ok((StatusCode::CREATED, Json(todo)))
 }
@@ -42,16 +41,9 @@ pub async fn update_todo(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateTodo>,
 ) -> Result<Json<Todo>, AppError> {
-    let title = if let Some(t) = payload.title {
-        let t = t.trim();
-        if t.is_empty() {
-            return Err(AppError::BadRequest("title is empty"));
-        }
-        Some(t.to_string())
-    } else {
-        None
-    };
+    payload.validate()?;
 
+    let title = payload.title.map(|t| t.trim().to_string());
     let todo = TodoStore::update(&state, id, title, payload.done).await?;
 
     Ok(Json(todo))

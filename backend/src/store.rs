@@ -3,10 +3,29 @@ use crate::{error::AppError, models::Todo, state::AppState};
 pub struct TodoStore;
 
 impl TodoStore {
-    pub async fn list(state: &AppState) -> Result<Vec<Todo>, AppError> {
+    // 戻り値は (Todoリスト, 全件数) のタプル
+    pub async fn list(
+        state: &AppState,
+        page: i64,
+        limit: i64,
+    ) -> Result<(Vec<Todo>, i64), AppError> {
+        // 全件数を取得
+        let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM todos")
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("[sqlx error][count] {e:?}");
+                AppError::Internal
+            })?;
+
+        // OFFSET = (ページ番号 - 1) × 1ページあたりの件数
+        let offset = (page - 1) * limit;
+
         let todos = sqlx::query_as::<_, Todo>(
-            "SELECT id, title, created_at::text AS created_at, updated_at::text AS updated_at, done FROM todos ORDER BY id",
+            "SELECT id, title, created_at::text AS created_at, updated_at::text AS updated_at, done FROM todos ORDER BY id LIMIT $1 OFFSET $2",
         )
+        .bind(limit)
+        .bind(offset)
         .fetch_all(&state.pool)
         .await
         .map_err(|e| {
@@ -14,7 +33,7 @@ impl TodoStore {
             AppError::Internal
         })?;
 
-        Ok(todos)
+        Ok((todos, total.0))
     }
 
     pub async fn get(state: &AppState, id: i64) -> Result<Todo, AppError> {

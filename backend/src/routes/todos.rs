@@ -1,20 +1,33 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
 };
 use validator::Validate;
 
 use crate::{
     error::AppError,
-    models::{CreateTodo, Todo, UpdateTodo},
+    models::{CreateTodo, PaginatedResponse, Pagination, Todo, UpdateTodo},
     state::AppState,
     store::TodoStore,
 };
 
-pub async fn list_todos(State(state): State<AppState>) -> Result<Json<Vec<Todo>>, AppError> {
-    let items = TodoStore::list(&state).await?;
-    Ok(Json(items))
+pub async fn list_todos(
+    State(state): State<AppState>,
+    Query(params): Query<Pagination>,
+) -> Result<Json<PaginatedResponse<Todo>>, AppError> {
+    // パラメータが指定されなければデフォルト値を使う
+    let page = params.page.unwrap_or(1);
+    let limit = params.limit.unwrap_or(10);
+
+    let (items, total) = TodoStore::list(&state, page, limit).await?;
+
+    Ok(Json(PaginatedResponse {
+        data: items,
+        total,
+        page,
+        limit,
+    }))
 }
 
 pub async fn create_todo(

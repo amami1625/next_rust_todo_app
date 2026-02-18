@@ -22,3 +22,20 @@ pub struct UpdateTodo {
     pub title: Option<String>,
     pub done: Option<bool>,
 }
+
+// クエリパラメータを受け取る struct
+// GET /todos?page=1&limit=10 のように使う
+#[derive(Debug, Deserialize)]
+pub struct Pagination {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+}
+
+// ページネーション付きのレスポンス
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T: Serialize> {
+    pub data: Vec<T>,
+    pub total: i64,
+    pub page: i64,
+    pub limit: i64,
+}

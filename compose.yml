@@ -16,5 +16,30 @@ services:
       timeout: 3s
       retries: 20
 
+  backend:
+    build: ./backend
+    container_name: todo-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://todo:todo@postgres:5432/todo
+      HOST: 0.0.0.0
+      PORT: "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: todo-frontend
+    ports:
+      - "3001:3000"
+    environment:
+      # Next.js のサーバーサイドからバックエンドへアクセスする URL
+      # Docker 内ではコンテナ名で通信する
+      AXUM_API_BASE: http://backend:3000
+    depends_on:
+      - backend
+
 volumes:
   todo_pgdata:

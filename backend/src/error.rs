@@ -10,6 +10,10 @@ use validator::ValidationErrors;
 pub enum AppError {
     NotFound,
     Validation(String),
+    // メールアドレスが既に登録されている
+    Conflict,
+    // メールアドレスまたはパスワードが間違っている
+    Unauthorized,
     Internal,
 }
 
@@ -49,6 +53,18 @@ impl IntoResponse for AppError {
             AppError::Validation(msg) => {
                 let body = ErrorBody { error: msg };
                 (StatusCode::BAD_REQUEST, Json(body)).into_response()
+            }
+            AppError::Conflict => {
+                let body = ErrorBody {
+                    error: "既に登録されているメールアドレスです".to_string(),
+                };
+                (StatusCode::CONFLICT, Json(body)).into_response()
+            }
+            AppError::Unauthorized => {
+                let body = ErrorBody {
+                    error: "メールアドレスまたはパスワードが正しくありません".to_string(),
+                };
+                (StatusCode::UNAUTHORIZED, Json(body)).into_response()
             }
             AppError::Internal => {
                 let body = ErrorBody {

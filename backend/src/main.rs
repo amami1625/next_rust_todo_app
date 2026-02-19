@@ -20,7 +20,8 @@ async fn main() {
 
     sqlx::migrate!().run(&pool).await.unwrap();
 
-    let state = AppState::new(pool);
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or("dev-secret-key".to_string());
+    let state = AppState::new(pool, jwt_secret);
     let app = app::app(state);
 
     // HOST 環境変数がなければ 127.0.0.1 を使う（ローカル開発用）

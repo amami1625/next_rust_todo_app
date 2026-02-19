@@ -4,6 +4,7 @@ use validator::Validate;
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct Todo {
     pub id: i64,
+    pub user_id: i64,
     pub title: String,
     pub done: bool,
     pub created_at: String,

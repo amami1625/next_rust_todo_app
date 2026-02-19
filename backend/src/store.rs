@@ -12,8 +12,8 @@ impl TodoStore {
         limit: i64,
     ) -> Result<(Vec<Todo>, i64), AppError> {
         // そのユーザーの全件数を取得
-        let total: (i64,) =
-            sqlx::query_as("SELECT COUNT(*) FROM todos WHERE user_id = $1")
+        let total: i64 =
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM todos WHERE user_id = $1")
                 .bind(user_id)
                 .fetch_one(&state.pool)
                 .await
@@ -37,7 +37,7 @@ impl TodoStore {
             AppError::Internal
         })?;
 
-        Ok((todos, total.0))
+        Ok((todos, total))
     }
 
     pub async fn get(state: &AppState, id: i64, user_id: i64) -> Result<Todo, AppError> {
@@ -57,11 +57,7 @@ impl TodoStore {
         todo.ok_or(AppError::NotFound)
     }
 
-    pub async fn create(
-        state: &AppState,
-        user_id: i64,
-        title: String,
-    ) -> Result<Todo, AppError> {
+    pub async fn create(state: &AppState, user_id: i64, title: String) -> Result<Todo, AppError> {
         let id = sqlx::query_scalar::<_, i64>(
             r#"
             WITH now(ts) AS (SELECT now())

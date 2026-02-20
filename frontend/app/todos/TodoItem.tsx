@@ -12,10 +12,11 @@ export function TodoItem({
   todo: Todo;
   onToggle: (todo: Todo) => void;
   onDelete: (id: number) => void;
-  onUpdate: (todo: Todo, title: string) => void;
+  onUpdate: (todo: Todo, title: string, priority: string) => void;
 }) {
   const [update, setUpdate] = useState(false);
   const [updateTitle, setUpdateTitle] = useState(todo.title);
+  const [updatePriority, setUpdatePriority] = useState(todo.priority);
 
   // 優先度バッジの設定
   const priorityConfig = {
@@ -128,9 +129,18 @@ export function TodoItem({
             autoFocus
             className="flex-1 border border-blue-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <select
+            value={updatePriority}
+            onChange={(e) => setUpdatePriority(e.target.value)}
+            className="border border-blue-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          >
+            <option value="low">低</option>
+            <option value="middle">中</option>
+            <option value="high">高</option>
+          </select>
           <button
             onClick={() => {
-              onUpdate(todo, updateTitle);
+              onUpdate(todo, updateTitle, updatePriority);
               setUpdate(false);
             }}
             className="bg-blue-600 text-white text-sm rounded-lg px-3 py-1.5 hover:bg-blue-700 transition-colors"

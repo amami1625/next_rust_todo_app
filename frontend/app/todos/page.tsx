@@ -70,12 +70,12 @@ export default function TodosPage() {
     }
   }
 
-  // タイトルの更新
-  async function handleUpdate(todo: Todo, title: string) {
+  // タイトル・優先度の更新
+  async function handleUpdate(todo: Todo, title: string, priority: string) {
     const token = getToken();
     if (!token) return;
     try {
-      const updated = await updateTodo(token, todo.id, title);
+      const updated = await updateTodo(token, todo.id, title, priority);
       setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "更新に失敗しました");

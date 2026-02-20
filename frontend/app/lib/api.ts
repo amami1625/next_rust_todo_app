@@ -84,15 +84,15 @@ export async function toggleTodo(token: string, id: number, done: boolean): Prom
   return json as Todo;
 }
 
-// Todo のタイトルを更新
-export async function updateTodo(token: string, id: number, title: string): Promise<Todo> {
+// Todo のタイトル・優先度を更新
+export async function updateTodo(token: string, id: number, title: string, priority: string): Promise<Todo> {
   const res = await fetch(`${BASE_URL}/todos/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, priority }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? "更新に失敗しました");

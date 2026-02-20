@@ -1,7 +1,7 @@
 mod app;
 mod error;
 mod models;
-mod routes;
+mod handler;
 mod state;
 mod store;
 

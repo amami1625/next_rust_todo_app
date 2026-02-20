@@ -18,7 +18,7 @@ impl TodoStore {
                 .fetch_one(&state.pool)
                 .await
                 .map_err(|e| {
-                    eprintln!("[sqlx error][count] {e:?}");
+                    eprintln!("[sqlx error][list] {e:?}");
                     AppError::Internal
                 })?;
 

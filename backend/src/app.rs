@@ -2,7 +2,7 @@ use axum::{Router, http::HeaderValue, middleware::from_fn_with_state, routing::{
 use tower_http::cors::{AllowHeaders, AllowMethods, CorsLayer};
 
 use crate::{
-    routes::{
+    handler::{
         auth::{login, register},
         middleware::require_auth,
         todos::{create_todo, delete_todo, get_todo, list_todos, update_todo},

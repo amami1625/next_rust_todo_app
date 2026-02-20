@@ -6,6 +6,7 @@ pub struct Todo {
     pub id: i64,
     pub user_id: i64,
     pub title: String,
+    pub priority: String,
     pub done: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -19,6 +20,7 @@ pub struct CreateTodo {
         message = "タイトルは1文字以上200文字以下で入力してください"
     ))]
     pub title: String,
+    pub priority: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -29,6 +31,7 @@ pub struct UpdateTodo {
         message = "タイトルは1文字以上200文字以下で入力してください"
     ))]
     pub title: Option<String>,
+    pub priority: Option<String>,
     pub done: Option<bool>,
 }
 
@@ -60,6 +63,7 @@ mod tests {
         fn 正常なタイトルでバリデーションが通る() {
             let todo = CreateTodo {
                 title: "買い物に行く".to_string(),
+                priority: "middle".to_string(),
             };
             assert!(todo.validate().is_ok());
         }
@@ -68,6 +72,7 @@ mod tests {
         fn 空のタイトルはバリデーションエラーになる() {
             let todo = CreateTodo {
                 title: "".to_string(),
+                priority: "middle".to_string(),
             };
             assert!(todo.validate().is_err());
         }
@@ -76,6 +81,7 @@ mod tests {
         fn タイトル200文字はバリデーションが通る() {
             let todo = CreateTodo {
                 title: "あ".repeat(200),
+                priority: "middle".to_string(),
             };
             assert!(todo.validate().is_ok());
         }
@@ -84,6 +90,7 @@ mod tests {
         fn タイトル201文字はバリデーションエラーになる() {
             let todo = CreateTodo {
                 title: "あ".repeat(201),
+                priority: "middle".to_string(),
             };
             assert!(todo.validate().is_err());
         }
@@ -96,6 +103,7 @@ mod tests {
         fn タイトルなしの更新はバリデーションが通る() {
             let todo = UpdateTodo {
                 title: None,
+                priority: Some("middle".to_string()),
                 done: Some(true),
             };
             assert!(todo.validate().is_ok());
@@ -105,6 +113,7 @@ mod tests {
         fn 正常なタイトルでの更新はバリデーションが通る() {
             let todo = UpdateTodo {
                 title: Some("新しいタイトル".to_string()),
+                priority: Some("middle".to_string()),
                 done: None,
             };
             assert!(todo.validate().is_ok());
@@ -114,6 +123,7 @@ mod tests {
         fn タイトル200文字はバリデーションが通る() {
             let todo = UpdateTodo {
                 title: Some("a".repeat(200)),
+                priority: Some("middle".to_string()),
                 done: Some(true),
             };
             assert!(todo.validate().is_ok());
@@ -123,6 +133,7 @@ mod tests {
         fn タイトル201文字はバリデーションエラーになる() {
             let todo = UpdateTodo {
                 title: Some("あ".repeat(201)),
+                priority: Some("middle".to_string()),
                 done: Some(true),
             };
             assert!(todo.validate().is_err());
@@ -132,6 +143,7 @@ mod tests {
         fn 空のタイトルでの更新はバリデーションエラーになる() {
             let todo = UpdateTodo {
                 title: Some("".to_string()),
+                priority: Some("middle".to_string()),
                 done: None,
             };
             assert!(todo.validate().is_err());

@@ -25,7 +25,7 @@ impl TodoStore {
         let offset = (page - 1) * limit;
 
         let todos = sqlx::query_as::<_, Todo>(
-            "SELECT id, user_id, title, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE user_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+            "SELECT id, user_id, title, priority, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE user_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
         )
         .bind(user_id)
         .bind(limit)
@@ -42,7 +42,7 @@ impl TodoStore {
 
     pub async fn get(state: &AppState, id: i64, user_id: i64) -> Result<Todo, AppError> {
         let todo = sqlx::query_as::<_, Todo>(
-            "SELECT id, user_id, title, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE id = $1 AND user_id = $2",
+            "SELECT id, user_id, title, priority, done, created_at::text AS created_at, updated_at::text AS updated_at FROM todos WHERE id = $1 AND user_id = $2",
         )
         .bind(id)
         .bind(user_id)
@@ -57,17 +57,23 @@ impl TodoStore {
         todo.ok_or(AppError::NotFound)
     }
 
-    pub async fn create(state: &AppState, user_id: i64, title: String) -> Result<Todo, AppError> {
+    pub async fn create(
+        state: &AppState,
+        user_id: i64,
+        title: String,
+        priority: String,
+    ) -> Result<Todo, AppError> {
         let id = sqlx::query_scalar::<_, i64>(
             r#"
             WITH now(ts) AS (SELECT now())
-            INSERT INTO todos (user_id, title, done, created_at, updated_at)
-            SELECT $1, $2, false, ts, ts FROM now
+            INSERT INTO todos (user_id, title, priority, done, created_at, updated_at)
+            SELECT $1, $2, $3, false, ts, ts FROM now
             RETURNING id
             "#,
         )
         .bind(user_id)
         .bind(title)
+        .bind(priority)
         .fetch_one(&state.pool)
         .await
         .map_err(|e| {
@@ -83,6 +89,7 @@ impl TodoStore {
         id: i64,
         user_id: i64,
         title: Option<String>,
+        priority: Option<String>,
         done: Option<bool>,
     ) -> Result<Todo, AppError> {
         // 存在確認（他人の Todo なら NotFound になる）
@@ -99,6 +106,21 @@ impl TodoStore {
             .await
             .map_err(|e| {
                 eprintln!("[sqlx error][update title] {e:?}");
+                AppError::Internal
+            })?;
+        }
+
+        if let Some(priority) = priority {
+            sqlx::query(
+                "UPDATE todos SET priority = $1, updated_at = now() WHERE id = $2 AND user_id = $3",
+            )
+            .bind(priority)
+            .bind(id)
+            .bind(user_id)
+            .execute(&state.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("[sqlx error][update priority] {e:?}");
                 AppError::Internal
             })?;
         }

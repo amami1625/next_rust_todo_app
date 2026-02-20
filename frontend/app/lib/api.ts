@@ -7,6 +7,7 @@ export type Todo = {
   id: number;
   user_id: number;
   title: string;
+  priority: string;
   done: boolean;
   created_at: string;
   updated_at: string;
@@ -54,14 +55,14 @@ export async function listTodos(token: string): Promise<PaginatedResponse> {
 }
 
 // Todo 作成
-export async function createTodo(token: string, title: string): Promise<Todo> {
+export async function createTodo(token: string, title: string, priority: string): Promise<Todo> {
   const res = await fetch(`${BASE_URL}/todos`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, priority }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? "作成に失敗しました");

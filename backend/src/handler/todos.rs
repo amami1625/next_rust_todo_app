@@ -39,7 +39,8 @@ pub async fn create_todo(
     payload.validate()?;
 
     let title = payload.title.trim().to_string();
-    let todo = TodoStore::create(&state, user_id, title).await?;
+    let priority = payload.priority.trim().to_string();
+    let todo = TodoStore::create(&state, user_id, title, priority).await?;
     Ok((StatusCode::CREATED, Json(todo)))
 }
 
@@ -61,7 +62,8 @@ pub async fn update_todo(
     payload.validate()?;
 
     let title = payload.title.map(|t| t.trim().to_string());
-    let todo = TodoStore::update(&state, id, user_id, title, payload.done).await?;
+    let priority = payload.priority.map(|p| p.trim().to_string());
+    let todo = TodoStore::update(&state, id, user_id, title, priority, payload.done).await?;
 
     Ok(Json(todo))
 }
